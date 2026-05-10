@@ -21,6 +21,9 @@ RUN \
 # add local files
 COPY root/ /
 
+# patches applied to upstream BarcodeBuddy after extraction
+COPY patches/ /tmp/patches/
+
 
 # install packages
 RUN \
@@ -54,6 +57,7 @@ RUN \
 	php8-xml \
 	php8-xmlwriter \
 	php8-zlib \
+	patch \
 	procps \
 	redis \
 	screen \
@@ -100,6 +104,11 @@ sed -i 's/SCRIPT_LOCATION=.*/SCRIPT_LOCATION="\/app\/bbuddy\/index.php"/g' /app/
 sed -i 's/WWW_USER=.*/WWW_USER="barcodebuddy"/g' /app/bbuddy/example/grabInput.sh && \
 sed -i 's/IS_DOCKER=.*/IS_DOCKER=true/g' /app/bbuddy/example/grabInput.sh && \
 sed -i 's/const DEFAULT_USE_REDIS =.*/const DEFAULT_USE_REDIS = "1";/g' /app/bbuddy/incl/db.inc.php && \
+ echo "**** applying local patches ****" && \
+ for p in /tmp/patches/*.patch; do \
+	patch -p1 -d /app/bbuddy --forward --silent < "$p" \
+	  || echo "WARNING: $p did not apply cleanly (may already be in upstream)"; \
+ done && \
  rm -rf \
 	/root/.cache \
 	/tmp/*
